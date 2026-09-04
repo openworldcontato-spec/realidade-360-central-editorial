@@ -83,12 +83,49 @@ export function drawArt(ctx, W, H, cfg, img) {
   ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
   const t = cfg.template;
   if (t === 'destaque') {
-    const imgH = middleH * 0.6, hy = middleY + imgH + 28;
-    if (cfg.image_url && img) { drawCover(ctx, img, 0, 0, W, imgH + 90, cfg.image_pos_x, cfg.image_pos_y); const sc = ctx.createLinearGradient(0, imgH - 120, 0, imgH + 90); sc.addColorStop(0, 'rgba(2,6,12,0)'); sc.addColorStop(1, 'rgba(2,6,12,0.95)'); ctx.fillStyle = sc; ctx.fillRect(0, imgH - 120, W, 210); }
-    else graphicBg(ctx, W, imgH + 90, cfg.editoria);
-    drawEditoria(ctx, W, M, cfg.editoria, C.gold, topY);
-    const { lines } = layoutHead(ctx, cfg.headline, cfg.highlights, W - 2 * M, 4);
-    drawHeadline(ctx, lines, M, hy, W - 2 * M, lineHeight, cfg.alignment, font, C.white, C.gold);
+    // Layout editorial v2.1: retratos dominam o topo e toda a área inferior é
+    // reconstruída pelo canvas. Isso cobre qualquer artefato/texto acidental da
+    // imagem-base e aproxima o resultado de um card jornalístico profissional.
+    const photoH = Math.round(H * 0.61);
+    if (cfg.image_url && img) {
+      drawCover(ctx, img, 0, 0, W, photoH, cfg.image_pos_x, cfg.image_pos_y);
+    } else {
+      graphicBg(ctx, W, photoH, cfg.editoria);
+    }
+    // Gradiente pesado + painel opaco: nenhum pseudo-texto gerado pela IA na
+    // parte baixa da imagem permanece visível na arte final.
+    const fade = ctx.createLinearGradient(0, photoH * 0.58, 0, photoH + 120);
+    fade.addColorStop(0, 'rgba(2,6,12,0)');
+    fade.addColorStop(0.58, 'rgba(2,6,12,0.82)');
+    fade.addColorStop(1, 'rgba(2,6,12,1)');
+    ctx.fillStyle = fade; ctx.fillRect(0, photoH * 0.55, W, photoH * 0.55);
+    ctx.fillStyle = '#02060c'; ctx.fillRect(0, photoH, W, H - photoH);
+
+    // Marca no topo, discreta e consistente.
+    ctx.textBaseline = 'top';
+    ctx.font = '900 34px Inter, Arial, sans-serif';
+    ctx.fillStyle = C.white; ctx.fillText('REALIDADE', M, 52);
+    const bw = ctx.measureText('REALIDADE ').width;
+    ctx.fillStyle = C.blueBright; ctx.fillText('360', M + bw, 52);
+
+    // Selo de editoria imediatamente antes da headline.
+    const chipY = photoH - 18;
+    ctx.font = '800 22px Inter, Arial, sans-serif';
+    const chipText = (cfg.editoria || '').toUpperCase();
+    const chipW = Math.max(150, ctx.measureText(chipText).width + 54);
+    ctx.fillStyle = C.blue; roundRect(ctx, M, chipY, chipW, 48, 8); ctx.fill();
+    ctx.fillStyle = C.white; ctx.fillText(chipText, M + 26, chipY + 11);
+
+    const maxHeadW = W - 2 * M;
+    const words = (cfg.headline || '').split(/\s+/).filter(Boolean).length;
+    const autoScale = words > 15 ? 0.78 : words > 12 ? 0.86 : words > 9 ? 0.93 : 1;
+    const headPx = Math.round(fontPx * autoScale);
+    const headFont = `900 ${headPx}px Inter, Arial, sans-serif`;
+    ctx.font = headFont;
+    const { lines } = layoutHead(ctx, cfg.headline, cfg.highlights, maxHeadW, 4);
+    const headLineH = Math.round(headPx * 1.08);
+    const headY = chipY + 74;
+    drawHeadline(ctx, lines, M, headY, maxHeadW, headLineH, cfg.alignment, headFont, C.white, C.blueBright);
   } else if (t === 'urgente') {
     ctx.fillStyle = C.red; ctx.fillRect(0, 0, W, 100); ctx.fillStyle = C.blue; ctx.fillRect(0, 100, W, 6);
     ctx.textBaseline = 'middle'; ctx.font = '900 34px Inter, Arial, sans-serif'; ctx.fillStyle = C.white;

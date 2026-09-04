@@ -41,7 +41,27 @@ export default function Radar() {
   const visible = stories.filter(s => (filter === 'Todos' || (filter === 'Última hora' && s.trend === 'Última hora') || s.trend === filter) && (category === 'Todas' || s.category === category));
   const act = (id, fn, after) => { base44.entities.Story.update(id, fn).then(() => { setStories(v => after ? v.filter(x => x.id !== id) : v.map(x => x.id === id ? { ...x, ...fn } : x)); }); };
   const createContent = (s) => { base44.entities.Story.update(s.id, { status: 'Em produção' }).then(() => navigate(`/editor?story=${s.id}`)); };
-  const lastText = lastRun ? `Última atualização: ${new Date(lastRun.run_at).toLocaleString('pt-BR')}` : 'Última atualização: —';
+  const parseRadarDate = (value) => {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    const raw = String(value).trim();
+    // Dados legados podem ter sido persistidos como DD/MM/YYYY HH:mm:ss.
+    // `new Date('04/09/2026')` é interpretado como 9 de abril em alguns runtimes,
+    // então parseamos explicitamente o formato brasileiro antes de usar Date.
+    const br = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[,\sT]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if (br) {
+      const [, dd, mm, yyyy, hh = '0', mi = '0', ss = '0'] = br;
+      const d = new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(mi), Number(ss));
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime()) ? null : d;
+  };
+  const formatRadarDate = (value) => {
+    const d = parseRadarDate(value);
+    return d ? d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : '—';
+  };
+  const lastText = lastRun ? `Última atualização: ${formatRadarDate(lastRun.run_at)}` : 'Última atualização: —';
   return <>
     <PageHeader title="Radar 360" description="Descoberta e análise de pautas jornalísticas em tempo real." action={<button onClick={() => run('runRadar', {}, 'Analisando fontes e identificando pautas...')} disabled={loading} className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"><RadarIcon className="h-4 w-4" />Atualizar Radar</button>} />
     <div className="mb-5 flex flex-wrap items-center gap-3 text-xs">
