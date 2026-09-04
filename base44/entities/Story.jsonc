@@ -33,32 +33,98 @@
       ],
       "default": "Detectada"
     },
+    "trend": {
+      "type": "string",
+      "enum": [
+        "\u00daltima hora",
+        "Em alta",
+        "Acelerando",
+        "Monitorar"
+      ],
+      "default": "Monitorar"
+    },
     "opportunity_score": {
       "type": "number",
       "minimum": 0,
       "maximum": 100,
       "default": 0
     },
-    "trend": {
+    "score_band": {
       "type": "string",
       "enum": [
-        "Em alta",
-        "Acelerando",
-        "Monitorar",
-        "Est\u00e1vel"
+        "PUBLICAR AGORA",
+        "ALTO POTENCIAL",
+        "ACOMPANHAR",
+        "BAIXA PRIORIDADE"
       ],
-      "default": "Monitorar"
+      "default": "BAIXA PRIORIDADE"
+    },
+    "score_reason": {
+      "type": "string"
     },
     "detected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_updated_at": {
       "type": "string",
       "format": "date-time"
     },
     "summary": {
       "type": "string"
     },
+    "what_happened": {
+      "type": "string"
+    },
+    "why_relevant": {
+      "type": "string"
+    },
     "source_count": {
       "type": "number",
       "default": 0
+    },
+    "primary_source_count": {
+      "type": "number",
+      "default": 0
+    },
+    "confirmed_points": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "divergent_points": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "unconfirmed_points": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "timeline": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ignored": {
+      "type": "boolean",
+      "default": false
+    },
+    "monitoring": {
+      "type": "boolean",
+      "default": false
+    },
+    "search_query": {
+      "type": "string"
+    },
+    "is_manual": {
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [

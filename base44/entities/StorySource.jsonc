@@ -8,15 +8,38 @@
     "source_id": {
       "type": "string"
     },
-    "source_url": {
+    "source_name": {
       "type": "string"
     },
     "source_title": {
       "type": "string"
     },
+    "source_url": {
+      "type": "string"
+    },
+    "primary_source_url": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "Ve\u00edculo jornal\u00edstico",
+        "Fonte oficial",
+        "Documento/Fonte prim\u00e1ria",
+        "Outra"
+      ],
+      "default": "Ve\u00edculo jornal\u00edstico"
+    },
+    "is_primary": {
+      "type": "boolean",
+      "default": false
+    },
     "published_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "summary": {
+      "type": "string"
     },
     "notes": {
       "type": "string"
@@ -24,6 +47,7 @@
   },
   "required": [
     "story_id",
-    "source_id"
+    "source_name",
+    "source_url"
   ]
 }
