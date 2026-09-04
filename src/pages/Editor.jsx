@@ -1,12 +1,31 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Sparkles, RefreshCw, ImagePlus, Check, Send } from 'lucide-react';
-import PageHeader from '@/components/editorial/PageHeader'; import EditorField from '@/components/editorial/EditorField';
-const empty={art_headline:'',alternative_headlines:'',factual_summary:'',facebook_text:'',instagram_text:'',source_notes:'',fact_check_notes:'',art_instructions:''};
-export default function Editor(){
- const [stories,setStories]=useState([]),[storyId,setStoryId]=useState(''),[form,setForm]=useState(empty),[notice,setNotice]=useState(''); useEffect(()=>{base44.entities.Story.list('-updated_date',50).then(v=>{setStories(v);if(v[0])setStoryId(v[0].id)})},[]); const story=stories.find(s=>s.id===storyId); const set=(k,v)=>setForm(f=>({...f,[k]:v}));
- const save=async(final=false)=>{if(!story)return;await base44.entities.ContentVersion.create({...form,alternative_headlines:form.alternative_headlines.split('\n').filter(Boolean),story_id:story.id,version_number:Date.now(),is_final:final});if(final)await base44.entities.Story.update(story.id,{status:'Pronta'});setNotice(final?'Conteúdo finalizado.':'Versão salva.');};
- const publish=async()=>{if(!story)return;await save(true);await base44.entities.Publication.create({story_id:story.id,published_at:new Date().toISOString(),category:story.category,headline:form.art_headline||story.title,used_text:form.facebook_text,platforms:['Facebook','Instagram']});await base44.entities.Story.update(story.id,{status:'Publicada'});setNotice('Marcado como publicado.');};
- const buttons=[['Gerar conteúdo',Sparkles,()=>setNotice('Estrutura pronta para o futuro agente de conteúdo.')],['Reescrever',RefreshCw,()=>setNotice('Estrutura pronta para reescrita assistida.')],['Gerar arte',ImagePlus,()=>setNotice('Estrutura pronta para o futuro gerador de artes.')],['Finalizar',Check,()=>save(true)],['Marcar como publicado',Send,publish]];
- return <><PageHeader title="Editor IA" description="Produção assistida com histórico de versões por pauta."/><div className="mb-5 rounded-2xl border border-white/7 bg-[#0b1424] p-4"><label className="text-xs text-slate-400">Pauta em produção</label><select value={storyId} onChange={e=>setStoryId(e.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-[#070d18] px-3 py-2.5 text-sm"><option value="">Selecione</option>{stories.map(s=><option value={s.id} key={s.id}>{s.title}</option>)}</select></div><div className="grid gap-5 xl:grid-cols-2">{[['Headline da arte','art_headline',2],['Alternativas de headline','alternative_headlines',3],['Resumo factual','factual_summary',4],['Texto Facebook','facebook_text',6],['Texto Instagram','instagram_text',6],['Fontes','source_notes',4],['Observações de checagem','fact_check_notes',4],['Instruções da arte','art_instructions',4]].map(([l,k,r])=><EditorField key={k} label={l} value={form[k]} rows={r} onChange={v=>set(k,v)}/>)}</div>{notice&&<p className="mt-4 text-sm text-blue-300">{notice}</p>}<div className="mt-6 flex flex-wrap gap-2">{buttons.map(([l,I,fn],i)=><button key={l} onClick={fn} className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold ${i===0?'bg-blue-600 text-white':'border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'}`}><I className="h-4 w-4"/>{l}</button>)}</div></>
+import PageHeader from '@/components/editorial/PageHeader';
+import EditorField from '@/components/editorial/EditorField';
+const empty = { art_headline: '', alternative_headlines: '', factual_summary: '', facebook_text: '', instagram_text: '', source_notes: '', fact_check_notes: '', art_instructions: '' };
+export default function Editor() {
+  const [params] = useSearchParams();
+  const [stories, setStories] = useState([]);
+  const [storyId, setStoryId] = useState('');
+  const [form, setForm] = useState(empty);
+  const [notice, setNotice] = useState('');
+  useEffect(() => { base44.entities.Story.filter({ ignored: false }, '-updated_date', 50).then(v => { setStories(v); const p = params.get('story'); const initial = p && v.find(s => s.id === p) ? p : (v[0] ? v[0].id : ''); setStoryId(initial); }); }, []);
+  useEffect(() => {
+    const story = stories.find(s => s.id === storyId);
+    if (story && !form.factual_summary && !form.source_notes) setForm(f => ({ ...f, factual_summary: story.what_happened || story.summary || '' }));
+  }, [storyId, stories]);
+  const story = stories.find(s => s.id === storyId);
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const save = async (final = false) => { if (!story) return; await base44.entities.ContentVersion.create({ ...form, alternative_headlines: form.alternative_headlines.split('\n').filter(Boolean), story_id: story.id, version_number: Date.now(), is_final: final }); if (final) await base44.entities.Story.update(story.id, { status: 'Pronta' }); setNotice(final ? 'Conteúdo finalizado.' : 'Versão salva.'); };
+  const publish = async () => { if (!story) return; await save(true); await base44.entities.Publication.create({ story_id: story.id, published_at: new Date().toISOString(), category: story.category, headline: form.art_headline || story.title, used_text: form.facebook_text, platforms: ['Facebook', 'Instagram'] }); await base44.entities.Story.update(story.id, { status: 'Publicada' }); setNotice('Marcado como publicado.'); };
+  const buttons = [['Gerar conteúdo', Sparkles, () => setNotice('Estrutura pronta para o futuro agente de conteúdo.')], ['Reescrever', RefreshCw, () => setNotice('Estrutura pronta para reescrita assistida.')], ['Gerar arte', ImagePlus, () => setNotice('Estrutura pronta para o futuro gerador de artes.')], ['Finalizar', Check, () => save(true)], ['Marcar como publicado', Send, publish]];
+  return <>
+    <PageHeader title="Editor IA" description="Produção assistida com histórico de versões por pauta." />
+    <div className="mb-5 rounded-2xl border border-white/7 bg-[#0b1424] p-4"><label className="text-xs text-slate-400">Pauta em produção</label><select value={storyId} onChange={e => setStoryId(e.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-[#070d18] px-3 py-2.5 text-sm text-slate-200"><option value="">Selecione uma pauta</option>{stories.map(s => <option value={s.id} key={s.id}>{s.title}</option>)}</select></div>
+    <div className="grid gap-5 xl:grid-cols-2">{[['Headline da arte', 'art_headline', 2], ['Alternativas de headline', 'alternative_headlines', 3], ['Resumo factual', 'factual_summary', 4], ['Texto Facebook', 'facebook_text', 6], ['Texto Instagram', 'instagram_text', 6], ['Fontes', 'source_notes', 4], ['Observações de checagem', 'fact_check_notes', 4], ['Instruções da arte', 'art_instructions', 4]].map(([l, k, r]) => <EditorField key={k} label={l} value={form[k]} rows={r} onChange={v => set(k, v)} />)}</div>
+    {notice && <p className="mt-4 text-sm text-blue-300">{notice}</p>}
+    <div className="mt-6 flex flex-wrap gap-2">{buttons.map(([l, I, fn], i) => <button key={l} onClick={fn} className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold ${i === 0 ? 'bg-blue-600 text-white' : 'border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'}`}><I className="h-4 w-4" />{l}</button>)}</div>
+  </>;
 }
