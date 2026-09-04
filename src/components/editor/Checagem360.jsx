@@ -10,7 +10,7 @@ const statusMap = {
 };
 export default function Checagem360({ items }) {
   if (!items || !items.length) return <p className="text-sm text-slate-600">Execute a geração para ver a Checagem 360.</p>;
-  return <div className="space-y-2">{items.map((c, i) => {
+  return <div className="space-y-2"><p className="text-[11px] leading-relaxed text-slate-500">Auditoria editorial assistida por IA baseada nas fontes vinculadas. A Checagem 360 analisa consistência e suporte documental — a revisão editorial humana continua necessária.</p>{items.map((c, i) => {
     const m = statusMap[c.status] || statusMap['Não confirmado']; const Icon = m.icon;
     return <div key={i} className="rounded-xl border border-white/7 bg-[#070d18] p-4">
       <div className="flex items-start justify-between gap-3"><p className="text-sm text-slate-200">{c.claim}</p><span className={`flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold ${m.cls}`}><Icon className="h-3.5 w-3.5" />{c.status}</span></div>

@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Loader2, Check, AlertTriangle, X, Sparkles } from 'lucide-react';
+import { composeArtBlob } from '@/lib/composeArt';
 
 const STEPS = [
   { key: 'apuracao', label: 'Atualizando apuração e confirmando fontes...' },
   { key: 'conteudo', label: 'Cruzando informações e gerando conteúdo...' },
   { key: 'checagem', label: 'Executando Checagem 360 e Confiança Editorial...' },
   { key: 'arte', label: 'Preparando briefing visual e gerando arte 1080×1350...' },
-  { key: 'salvar', label: 'Salvando rascunho e abrindo revisão final...' }
+  { key: 'salvar', label: 'Compondo arte final 1080×1350 e salvando rascunho...' }
 ];
 
 function friendlyError(err, stepKey) {
@@ -46,34 +47,43 @@ export default function FullPackageModal({ story, onClose, onComplete }) {
       acc.version = r2.data.version;
       setStatuses(s => ({ ...s, conteudo: 'done', checagem: 'done' }));
 
-      // 4. Arte
+      // 4. Arte (imagem-base por IA)
       curKey = 'arte'; setStepIdx(3);
       const v = acc.version;
+      const heads = [v?.art_headline, ...(v?.alternative_headlines || [])].filter(Boolean);
+      const wc = h => (h.split(/\s+/).filter(Boolean).length);
+      const finalHeadline = heads.find(h => wc(h) >= 6 && wc(h) <= 16) || v?.art_headline || story.title;
       const r3 = await base44.functions.invoke('generateArtImage', {
         editoria: story.category,
-        headline: v?.art_headline || story.title,
+        headline: finalHeadline,
         context: v?.factual_summary || story.what_happened || story.summary || ''
       });
       if (r3.data?.error) throw Object.assign(new Error(r3.data.error), { step: 'arte' });
       acc.imageUrl = r3.data.url;
 
-      // 5. Salvar arte como rascunho
+      // 5. Salvar arte composta (1080x1350) como rascunho, reutilizando parent_id/versão
       curKey = 'salvar'; setStepIdx(4);
+      const existingArts = await base44.entities.Artwork.filter({ story_id: story.id }, '-version', 1);
+      let parentId = ''; let versionNum = 1;
+      if (existingArts.length) { const last = existingArts[0]; parentId = last.parent_id || last.id; versionNum = (last.version || 1) + 1; }
       const artwork = await base44.entities.Artwork.create({
         story_id: story.id,
         content_version_id: v?.id || '',
-        title: v?.art_headline || story.title,
-        headline: v?.art_headline || story.title,
-        editoria: story.category,
-        category: story.category,
-        template: 'destaque',
-        format: 'feed',
-        image_url: acc.imageUrl,
-        image_origin: 'ai',
-        is_illustrative: true,
-        status: 'Rascunho',
-        version: 1
+        title: finalHeadline, headline: finalHeadline,
+        editoria: story.category, category: story.category,
+        template: 'destaque', format: 'feed',
+        image_url: acc.imageUrl, image_origin: 'ai', is_illustrative: true,
+        status: 'Rascunho', version: versionNum, parent_id: parentId || undefined
       });
+      if (!parentId) { await base44.entities.Artwork.update(artwork.id, { parent_id: artwork.id }); artwork.parent_id = artwork.id; }
+      // composição final 1080x1350 (off-DOM) — se falhar, mantém imagem-base e segue para revisão
+      try {
+        const blob = await composeArtBlob({ template: 'destaque', format: 'feed', headline: finalHeadline, editoria: story.category, highlights: [], fontSize: 1, alignment: 'left', show_signature: true, image_pos_x: 50, image_pos_y: 50, image_url: acc.imageUrl }, acc.imageUrl, 'feed');
+        const file = new File([blob], 'arte.png', { type: 'image/png' });
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        await base44.entities.Artwork.update(artwork.id, { composed_url: file_url });
+        artwork.composed_url = file_url;
+      } catch (e) { /* composição falhou: imagem-base preservada; usuário pode compor no Estúdio */ }
       acc.artwork = artwork;
       setStatuses(s => ({ ...s, arte: 'done', salvar: 'done' }));
       setStepIdx(5);

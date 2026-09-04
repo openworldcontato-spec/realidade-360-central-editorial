@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { discoverArticles } from "../../shared/radar.ts";
+import { discoverArticles, normalizeUrl } from "../../shared/radar.ts";
 
 export default async function(req) {
   try {
@@ -13,8 +13,13 @@ export default async function(req) {
     if (!story) return Response.json({ error: "Pauta não encontrada." }, { status: 404 });
     const sources = await base44.entities.StorySource.filter({ story_id: storyId }, null, 100);
     const found = await discoverArticles(base44, "todas as editorias", story.title);
-    const existingUrls = new Set(sources.map(s => s.source_url));
-    const fresh = found.filter(a => a.url && !existingUrls.has(a.url));
+    const existingNorm = new Set(sources.map(s => normalizeUrl(s.source_url)));
+    const seenFound = new Set();
+    const fresh = found.filter(a => {
+      const n = normalizeUrl(a.url);
+      if (!a.url || !n || existingNorm.has(n) || seenFound.has(n)) return false;
+      seenFound.add(n); return true;
+    });
     let added = [];
     if (fresh.length) {
       added = fresh.map(a => ({
@@ -25,7 +30,8 @@ export default async function(req) {
       }));
       await base44.entities.StorySource.bulkCreate(added);
     }
-    const total = sources.length + added.length;
+    const allNorm = new Set(sources.map(s => normalizeUrl(s.source_url))); added.forEach(a => allNorm.add(normalizeUrl(a.source_url)));
+    const total = allNorm.size;
     const primary = sources.filter(s => s.is_primary).length + added.filter(s => s.is_primary).length;
     await base44.entities.Story.update(storyId, { source_count: total, primary_source_count: primary, last_updated_at: new Date().toISOString(), last_check_at: new Date().toISOString() });
     await base44.entities.RadarSnapshot.create({ story_id: storyId, snapshot_at: new Date().toISOString(), source_count: total, primary_count: primary });

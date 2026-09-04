@@ -63,7 +63,7 @@ export default function Radar() {
     </div>
     {showLink && <div className="mb-5 flex flex-wrap items-center gap-2 rounded-2xl border border-white/7 bg-[#0b1424] p-4">
       <input value={link} onChange={e => setLink(e.target.value)} placeholder="Cole o URL de uma matéria encontrada manualmente" className="min-w-0 flex-1 rounded-xl border border-white/10 bg-[#070d18] px-3 py-2.5 text-sm text-slate-200" />
-      <button onClick={() => link.trim() && run('analyzeLink', { link: link.trim() }, 'Analisando link e procurando fontes...')} disabled={loading} className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">Analisar link</button>
+      <button onClick={() => { const u = link.trim(); if (!u) return; if (!/^https?:\/\//i.test(u)) { setNotice('Informe um link válido (http:// ou https://).'); return; } run('analyzeLink', { link: u }, 'Analisando link e procurando fontes...'); }} disabled={loading} className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">Analisar link</button>
     </div>}
     <div className="mb-4 flex gap-2 overflow-x-auto pb-2">{primary.map(f => <button onClick={() => setFilter(f)} key={f} className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold ${filter === f ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>{f}</button>)}</div>
     <select value={category} onChange={e => setCategory(e.target.value)} className="mb-5 rounded-xl border border-white/10 bg-[#0b1424] px-3 py-2 text-sm text-slate-300">{categories.map(c => <option key={c}>{c}</option>)}</select>

@@ -113,8 +113,8 @@ export default function ReviewFinal({ storyId, versionId, artworkId, partial, on
                 <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">Arte 1080×1350</span>
                 {artwork && <span className="text-[10px] text-slate-500">v{artwork.version || 1} · {artwork.status}</span>}
               </div>
-              {artwork?.image_url
-                ? <Image src={artwork.image_url} alt={artwork.headline} className="aspect-[4/5] w-full rounded-lg" fittingType="fill" />
+              {(artwork?.composed_url || artwork?.image_url)
+                ? <Image src={artwork.composed_url || artwork.image_url} alt={artwork.headline} className="aspect-[4/5] w-full rounded-lg" fittingType="fill" />
                 : <div className="flex aspect-[4/5] items-center justify-center rounded-lg border border-dashed border-white/10 text-xs text-slate-500">Arte não gerada</div>}
               {artwork?.is_illustrative && <p className="mt-2 text-[10px] text-blue-300">Imagem ilustrativa (não documental)</p>}
               <button onClick={openStudio} className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-white/10"><ImagePlus className="h-3.5 w-3.5" />{artwork ? 'Abrir no Estúdio' : 'Gerar arte no Estúdio'}</button>

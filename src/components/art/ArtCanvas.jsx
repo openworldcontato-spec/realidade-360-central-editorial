@@ -73,7 +73,7 @@ function graphicBg(ctx, W, H, editoria) {
   ctx.fillStyle = 'rgba(37,99,235,0.10)'; ctx.beginPath(); ctx.arc(W * 0.8, H * 0.3, 260, 0, Math.PI * 2); ctx.fill();
 }
 
-function drawArt(ctx, W, H, cfg, img) {
+export function drawArt(ctx, W, H, cfg, img) {
   const M = 80, topY = M, footerH = 90;
   const middleY = M + 90, middleH = H - middleY - footerH - M;
   const fontPx = Math.round((W === 1080 && H >= 1500 ? 70 : 64) * (cfg.fontSize || 1));

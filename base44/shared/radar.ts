@@ -13,6 +13,21 @@ const MAJOR_OUTLETS = ["g1","globo","cnn","folha","estadao","estadão","uol","ag
 
 function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
 
+// Normalização de URL para deduplicação de fontes (não altera a URL original exibida).
+export function normalizeUrl(u) {
+  if (!u) return '';
+  try {
+    const url = new URL(u);
+    const track = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','fbclid','gclid','mc_eid','mc_cid','igshid','ref','ref_src','si','_hsenc','_hsmi','yclid','msclkid'];
+    track.forEach(p => url.searchParams.delete(p));
+    url.hash = '';
+    let path = url.pathname || '/';
+    if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
+    return (url.protocol.toLowerCase() + '//' + url.hostname.toLowerCase() + path + url.search).toLowerCase();
+  } catch { return String(u || '').trim().toLowerCase();
+  }
+}
+
 function discoverySchema() {
   return {
     type: "object",
@@ -181,8 +196,9 @@ function sourceRelevanceScore(articles) {
   if (articles.some(a => MAJOR_OUTLETS.some(o => (a.outlet || "").toLowerCase().includes(o)))) s += 4;
   return Math.min(s, 10);
 }
-function velocityScore(prevSnapshots, totalSources) {
+function velocityScore(prevSnapshots, totalSources, newUnique) {
   if (!prevSnapshots || prevSnapshots.length === 0) return Math.min(totalSources * 1.5, 15);
+  if (newUnique <= 0) return 2; // sem crescimento real de cobertura
   const prev = prevSnapshots[prevSnapshots.length - 1];
   const ratio = prev.source_count > 0 ? totalSources / prev.source_count : 2;
   if (ratio >= 2) return 15;
@@ -191,10 +207,11 @@ function velocityScore(prevSnapshots, totalSources) {
   if (ratio >= 1) return 4;
   return 2;
 }
-function computeTrend(detectedAt, score, totalSources, prevSnapshots) {
+function computeTrend(detectedAt, score, totalSources, prevSnapshots, newUnique) {
   const ageMin = (Date.now() - new Date(detectedAt).getTime()) / 60000;
   const prev = prevSnapshots && prevSnapshots.length ? prevSnapshots[prevSnapshots.length - 1] : null;
-  const accelerating = prev && prev.source_count >= 2 && totalSources / prev.source_count >= 1.5;
+  // Acelerando exige crescimento real: pelo menos 2 novas fontes únicas desde o snapshot anterior.
+  const accelerating = prev && prev.source_count >= 2 && newUnique >= 2 && (totalSources / prev.source_count) >= 1.3;
   if (ageMin <= 60 && score >= 60) return "Última hora";
   if (accelerating) return "Acelerando";
   if (totalSources >= 5 && score >= 70) return "Em alta";
@@ -216,8 +233,6 @@ export async function storePautas(base44, pautas, articles, mode, searchQuery) {
     const primaryArticles = (p.primary_indices || []).map(i => articles[i]).filter(Boolean);
     const latestPub = pautaArticles.map(a => a.published_at).filter(Boolean).sort().pop();
     const recency = recencyScore(latestPub);
-    const sc = sourceCountScore(pautaArticles.length);
-    const sr = sourceRelevanceScore(pautaArticles);
 
     let storyId = p.matches_existing_story_id || null;
     let prevSnapshots = [];
@@ -236,17 +251,39 @@ export async function storePautas(base44, pautas, articles, mode, searchQuery) {
       }
     }
 
-    const totalSources = pautaArticles.length + existingSources.length;
-    const totalPrimary = primaryArticles.length + existingSources.filter(s => s.is_primary).length;
-    const velocity = velocityScore(prevSnapshots, totalSources);
+    // Deduplicação por URL normalizada ANTES de qualquer contagem/score.
+    const seenNorm = new Set();
+    const existingUnique = [];
+    for (const s of existingSources) {
+      const n = normalizeUrl(s.source_url);
+      if (!n || seenNorm.has(n)) continue;
+      seenNorm.add(n); existingUnique.push(s);
+    }
+    const newArticles = [];
+    for (const a of pautaArticles) {
+      const n = normalizeUrl(a.url);
+      if (!a.url || !n || seenNorm.has(n)) continue;
+      seenNorm.add(n); newArticles.push(a);
+    }
+    const totalSources = existingUnique.length + newArticles.length;
+    const totalPrimary = existingUnique.filter(s => s.is_primary).length + newArticles.filter(a => a.is_primary).length;
+    const prev = prevSnapshots && prevSnapshots.length ? prevSnapshots[prevSnapshots.length - 1] : null;
+    const newUnique = prev ? Math.max(0, totalSources - (prev.source_count || 0)) : totalSources;
+    const sc = sourceCountScore(totalSources);
+    const allForRelevance = [
+      ...existingUnique.map(s => ({ is_primary: s.is_primary, source_type: s.source_type, outlet: s.source_name })),
+      ...newArticles.map(a => ({ is_primary: a.is_primary, source_type: a.source_type, outlet: a.outlet }))
+    ];
+    const sr = sourceRelevanceScore(allForRelevance);
+    const velocity = velocityScore(prevSnapshots, totalSources, newUnique);
     const relevance = clamp(p.relevance || 0, 0, 15);
     const impact = clamp(p.impact || 0, 0, 15);
     const share = clamp(p.shareability || 0, 0, 5);
     const novelty = clamp(p.novelty || 0, 0, 5);
-    const score = Math.round(recency + sc + sr + velocity + relevance + impact + share + novelty);
-    const trend = computeTrend(detectedAt, score, totalSources, prevSnapshots);
+    const score = clamp(Math.round(recency + sc + sr + velocity + relevance + impact + share + novelty), 0, 100);
+    const trend = computeTrend(detectedAt, score, totalSources, prevSnapshots, newUnique);
     const band = bandFor(score);
-    const scoreReason = `Recência ${recency}/20 · ${totalSources} fontes (${sc}/15) · relevância de fontes ${sr}/10 · velocidade ${velocity}/15 · relevância pública ${relevance}/15 · impacto ${impact}/15 · compartilhamento ${share}/5 · novidade ${novelty}/5. ${(p.reasoning || "").trim()}`.trim();
+    const scoreReason = `Recência ${recency}/20 · ${totalSources} fontes únicas (${sc}/15) · relevância de fontes ${sr}/10 · velocidade ${velocity}/15 · relevância pública ${relevance}/15 · impacto ${impact}/15 · compartilhamento ${share}/5 · novidade ${novelty}/5. ${(p.reasoning || "").trim()}`.trim();
 
     const storyData = {
       title: p.consolidated_title,
@@ -277,23 +314,17 @@ export async function storePautas(base44, pautas, articles, mode, searchQuery) {
       storyId = created.id;
     }
 
-    const existingUrls = new Set(existingSources.map(s => s.source_url));
-    const newSources = [];
-    for (const a of pautaArticles) {
-      if (!a.url || existingUrls.has(a.url)) continue;
-      existingUrls.add(a.url);
-      newSources.push({
-        story_id: storyId,
-        source_name: a.outlet || "",
-        source_title: a.title,
-        source_url: a.url,
-        primary_source_url: a.primary_source_url || "",
-        source_type: a.source_type || "Veículo jornalístico",
-        is_primary: !!a.is_primary,
-        published_at: a.published_at || "",
-        summary: a.summary || ""
-      });
-    }
+    const newSources = newArticles.map(a => ({
+      story_id: storyId,
+      source_name: a.outlet || "",
+      source_title: a.title,
+      source_url: a.url,
+      primary_source_url: a.primary_source_url || "",
+      source_type: a.source_type || "Veículo jornalístico",
+      is_primary: !!a.is_primary,
+      published_at: a.published_at || "",
+      summary: a.summary || ""
+    }));
     if (newSources.length) await base44.entities.StorySource.bulkCreate(newSources);
 
     await base44.entities.RadarSnapshot.create({

@@ -10,6 +10,7 @@ export default async function(req) {
     const body = await req.json().catch(() => ({}));
     const link = (body.link || "").trim();
     if (!link) return Response.json({ error: "Informe um link de matéria." }, { status: 400 });
+    if (!/^https?:\/\//i.test(link)) return Response.json({ error: "Informe um link válido (http:// ou https://)." }, { status: 400 });
 
     const run = await base44.entities.RadarRun.create({
       run_at: new Date().toISOString(),

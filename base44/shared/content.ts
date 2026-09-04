@@ -1,5 +1,5 @@
 // Agente Jornalista 360: geração e reescrita do pacote editorial.
-import { discoverArticles } from "./radar.ts";
+import { discoverArticles, normalizeUrl } from "./radar.ts";
 
 function contentSchema() {
   return {
@@ -76,8 +76,13 @@ export async function generatePackage(base44, storyId) {
   let newCount = 0;
   try {
     const found = await discoverArticles(base44, "todas as editorias", story.title);
-    const existingUrls = new Set(sources.map(s => s.source_url));
-    const fresh = found.filter(a => a.url && !existingUrls.has(a.url));
+    const existingNorm = new Set(sources.map(s => normalizeUrl(s.source_url)));
+    const seenFound = new Set();
+    const fresh = found.filter(a => {
+      const n = normalizeUrl(a.url);
+      if (!a.url || !n || existingNorm.has(n) || seenFound.has(n)) return false;
+      seenFound.add(n); return true;
+    });
     if (fresh.length) {
       const toCreate = fresh.map(a => ({
         story_id: storyId, source_name: a.outlet || "", source_title: a.title,
@@ -88,10 +93,13 @@ export async function generatePackage(base44, storyId) {
       await base44.entities.StorySource.bulkCreate(toCreate);
       sources = sources.concat(toCreate);
       newCount = fresh.length;
-      const primary = sources.filter(s => s.is_primary).length;
-      await base44.entities.Story.update(storyId, { source_count: sources.length, primary_source_count: primary, last_updated_at: new Date().toISOString() });
-      await base44.entities.RadarSnapshot.create({ story_id: storyId, snapshot_at: new Date().toISOString(), source_count: sources.length, primary_count: primary });
     }
+    // contagem única por URL normalizada
+    const allNorm = new Set(); const uniqueAll = [];
+    for (const s of sources) { const n = normalizeUrl(s.source_url); if (!n || allNorm.has(n)) continue; allNorm.add(n); uniqueAll.push(s); }
+    const primary = uniqueAll.filter(s => s.is_primary).length;
+    await base44.entities.Story.update(storyId, { source_count: uniqueAll.length, primary_source_count: primary, last_updated_at: new Date().toISOString() });
+    await base44.entities.RadarSnapshot.create({ story_id: storyId, snapshot_at: new Date().toISOString(), source_count: uniqueAll.length, primary_count: primary });
   } catch (e) { /* complemento é best-effort */ }
 
   const context = buildContext(story, sources);
