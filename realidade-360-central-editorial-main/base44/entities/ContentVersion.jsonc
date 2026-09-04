@@ -1,0 +1,115 @@
+{
+  "name": "ContentVersion",
+  "type": "object",
+  "properties": {
+    "story_id": {
+      "type": "string"
+    },
+    "version_number": {
+      "type": "number"
+    },
+    "generation_type": {
+      "type": "string",
+      "enum": [
+        "gerar",
+        "reescrever",
+        "manual"
+      ],
+      "default": "manual"
+    },
+    "rewrite_mode": {
+      "type": "string"
+    },
+    "main_title": {
+      "type": "string"
+    },
+    "art_headline": {
+      "type": "string"
+    },
+    "alternative_headlines": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "factual_summary": {
+      "type": "string"
+    },
+    "facebook_text": {
+      "type": "string"
+    },
+    "instagram_text": {
+      "type": "string"
+    },
+    "short_caption": {
+      "type": "string"
+    },
+    "sources_text": {
+      "type": "string"
+    },
+    "source_notes": {
+      "type": "string"
+    },
+    "fact_check_notes": {
+      "type": "string"
+    },
+    "art_instructions": {
+      "type": "string"
+    },
+    "checagem": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "claim": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "confidence_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 0
+    },
+    "confidence_band": {
+      "type": "string"
+    },
+    "has_divergence": {
+      "type": "boolean",
+      "default": false
+    },
+    "divergence_note": {
+      "type": "string"
+    },
+    "is_developing": {
+      "type": "boolean",
+      "default": false
+    },
+    "last_check_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "is_final": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "story_id",
+    "version_number"
+  ]
+}

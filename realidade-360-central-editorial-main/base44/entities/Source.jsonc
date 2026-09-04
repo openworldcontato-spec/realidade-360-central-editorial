@@ -1,0 +1,62 @@
+{
+  "name": "Source",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "feed_url": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "Ve\u00edculo jornal\u00edstico",
+        "Fonte oficial",
+        "Documento/Fonte prim\u00e1ria",
+        "Outra"
+      ]
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Brasil",
+        "Pol\u00edtica",
+        "Economia",
+        "Justi\u00e7a",
+        "Seguran\u00e7a",
+        "Mundo",
+        "Tecnologia",
+        "Sociedade",
+        "Viral"
+      ]
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "Alta",
+        "M\u00e9dia",
+        "Baixa"
+      ],
+      "default": "M\u00e9dia"
+    },
+    "reliability": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 80
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "url",
+    "source_type"
+  ]
+}

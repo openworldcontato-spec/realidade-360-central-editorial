@@ -1,0 +1,122 @@
+{
+  "name": "Artwork",
+  "type": "object",
+  "properties": {
+    "story_id": {
+      "type": "string"
+    },
+    "content_version_id": {
+      "type": "string"
+    },
+    "parent_id": {
+      "type": "string"
+    },
+    "version": {
+      "type": "number",
+      "default": 1
+    },
+    "title": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "headline": {
+      "type": "string"
+    },
+    "editoria": {
+      "type": "string"
+    },
+    "template": {
+      "type": "string"
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "feed",
+        "square",
+        "story"
+      ],
+      "default": "feed"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "image_origin": {
+      "type": "string",
+      "enum": [
+        "ai",
+        "pauta",
+        "upload",
+        "official",
+        "none"
+      ],
+      "default": "none"
+    },
+    "image_source_url": {
+      "type": "string"
+    },
+    "image_source_name": {
+      "type": "string"
+    },
+    "is_illustrative": {
+      "type": "boolean",
+      "default": false
+    },
+    "rights_warning": {
+      "type": "boolean",
+      "default": false
+    },
+    "composed_url": {
+      "type": "string"
+    },
+    "show_signature": {
+      "type": "boolean",
+      "default": true
+    },
+    "highlight_words": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "font_size": {
+      "type": "number",
+      "default": 1
+    },
+    "alignment": {
+      "type": "string",
+      "enum": [
+        "left",
+        "center",
+        "right"
+      ],
+      "default": "left"
+    },
+    "image_pos_x": {
+      "type": "number",
+      "default": 50
+    },
+    "image_pos_y": {
+      "type": "number",
+      "default": 50
+    },
+    "instructions": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Rascunho",
+        "Em edi\u00e7\u00e3o",
+        "Aprovada",
+        "Publicada"
+      ],
+      "default": "Rascunho"
+    }
+  },
+  "required": [
+    "story_id",
+    "title"
+  ]
+}
