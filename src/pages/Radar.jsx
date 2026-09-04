@@ -5,7 +5,9 @@ import PageHeader from '@/components/editorial/PageHeader';
 import StoryCard from '@/components/editorial/StoryCard';
 import EmptyState from '@/components/editorial/EmptyState';
 import PautaDetail from '@/components/editorial/PautaDetail';
-import { Radar as RadarIcon, Loader2, Search, Link2, Eye, Ban, FileText, Activity } from 'lucide-react';
+import FullPackageModal from '@/components/editorial/FullPackageModal';
+import ReviewFinal from '@/components/editorial/ReviewFinal';
+import { Radar as RadarIcon, Loader2, Search, Link2, Eye, Ban, FileText, Activity, Sparkles } from 'lucide-react';
 const primary = ['Todos', 'Última hora', 'Em alta', 'Acelerando', 'Monitorar'];
 const categories = ['Todas', 'Brasil', 'Política', 'Economia', 'Justiça', 'Segurança', 'Mundo', 'Tecnologia', 'Sociedade', 'Viral'];
 export default function Radar() {
@@ -20,6 +22,8 @@ export default function Radar() {
   const [link, setLink] = useState('');
   const [showLink, setShowLink] = useState(false);
   const [detail, setDetail] = useState(null);
+  const [pkgStory, setPkgStory] = useState(null);
+  const [review, setReview] = useState(null);
   const load = () => base44.entities.Story.filter({ ignored: false }, '-opportunity_score', 60).then(setStories);
   const loadRun = () => base44.entities.RadarRun.filter({ status: 'concluida' }, '-run_at', 1).then(r => setLastRun(r[0] || null));
   useEffect(() => { load(); loadRun(); }, []);
@@ -65,10 +69,13 @@ export default function Radar() {
     <select value={category} onChange={e => setCategory(e.target.value)} className="mb-5 rounded-xl border border-white/10 bg-[#0b1424] px-3 py-2 text-sm text-slate-300">{categories.map(c => <option key={c}>{c}</option>)}</select>
     {visible.length ? <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{visible.map(s => <StoryCard key={s.id} story={s} actions={<>
       <button onClick={() => setDetail(s)} className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/10"><Eye className="h-3.5 w-3.5" />Abrir pauta</button>
-      <button onClick={() => createContent(s)} className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500"><FileText className="h-3.5 w-3.5" />Criar conteúdo</button>
+      <button onClick={() => setPkgStory(s)} className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500"><Sparkles className="h-3.5 w-3.5" />Gerar pacote completo</button>
+      <button onClick={() => createContent(s)} className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/10"><FileText className="h-3.5 w-3.5" />Criar conteúdo</button>
       <button onClick={() => act(s.id, { monitoring: true, status: 'Monitorando' })} className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-white/10"><Activity className="h-3.5 w-3.5" />Monitorar</button>
       <button onClick={() => act(s.id, { ignored: true }, true)} className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-white/10"><Ban className="h-3.5 w-3.5" />Ignorar</button>
     </>} />)}</section> : <EmptyState title={loading ? 'Analisando fontes e identificando pautas...' : 'Nenhuma pauta encontrada. Execute uma atualização do Radar 360.'} action={!loading && <button onClick={() => run('runRadar', {}, 'Analisando fontes e identificando pautas...')} className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white"><RadarIcon className="h-4 w-4" />Atualizar Radar 360</button>} />}
     <PautaDetail story={detail} onClose={() => setDetail(null)} />
+    {pkgStory && <FullPackageModal story={pkgStory} onClose={() => setPkgStory(null)} onComplete={(r) => { setPkgStory(null); setReview({ storyId: r.story.id, versionId: r.version?.id, artworkId: r.artwork?.id, partial: !!r.partial }); }} />}
+    {review && <ReviewFinal storyId={review.storyId} versionId={review.versionId} artworkId={review.artworkId} partial={review.partial} onClose={() => { setReview(null); load(); }} />}
   </>;
 }
