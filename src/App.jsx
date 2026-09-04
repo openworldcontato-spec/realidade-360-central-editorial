@@ -13,6 +13,7 @@ import Dashboard from '@/pages/Dashboard';
 import Radar from '@/pages/Radar';
 import Stories from '@/pages/Stories';
 import Editor from '@/pages/Editor';
+import ArtStudio from '@/pages/ArtStudio';
 import Artworks from '@/pages/Artworks';
 import Published from '@/pages/Published';
 import Sources from '@/pages/Sources';
@@ -57,6 +58,7 @@ const AuthenticatedApp = () => {
           <Route path="/radar" element={<Radar />} />
           <Route path="/pautas" element={<Stories />} />
           <Route path="/editor" element={<Editor />} />
+          <Route path="/estudio" element={<ArtStudio />} />
           <Route path="/artes" element={<Artworks />} />
           <Route path="/publicados" element={<Published />} />
           <Route path="/fontes" element={<Sources />} />

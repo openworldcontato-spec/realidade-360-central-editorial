@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Sparkles, RefreshCw, ImagePlus, Check, Send, Plus, Link2, Search, Loader2, History, AlertTriangle, ChevronDown, Save, FileText } from 'lucide-react';
 import PageHeader from '@/components/editorial/PageHeader';
@@ -16,6 +16,7 @@ const rewriteModes = ['Mais objetivo', 'Mais explicativo', 'Mais curto', 'Mais d
 
 export default function Editor() {
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const [stories, setStories] = useState([]);
   const [storyId, setStoryId] = useState('');
   const [story, setStory] = useState(null);
@@ -204,7 +205,7 @@ export default function Editor() {
       <CopyButton text={form.instagram_text} label="Copiar Instagram" className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200" />
       <CopyButton text={sourcesText} label="Copiar fontes" className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200" />
       <CopyButton text={fullPackage} label="Copiar pacote completo" className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200" />
-      <button onClick={() => setNotice('Estrutura pronta para o futuro gerador de artes.')} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/10"><ImagePlus className="h-4 w-4" />Gerar arte</button>
+      <button onClick={() => story && navigate(`/estudio?story=${story.id}&headline=${encodeURIComponent(form.art_headline || story.title)}&cv=${meta.current_version_id}`)} disabled={!story} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/10 disabled:opacity-50"><ImagePlus className="h-4 w-4" />Gerar arte</button>
     </div>}
 
     {story && <div className="mt-7 grid gap-5 lg:grid-cols-[1fr_280px]">
