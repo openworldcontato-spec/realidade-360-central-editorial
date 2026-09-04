@@ -1,0 +1,42 @@
+{
+  "name": "Publication",
+  "type": "object",
+  "properties": {
+    "story_id": {
+      "type": "string"
+    },
+    "content_version_id": {
+      "type": "string"
+    },
+    "artwork_id": {
+      "type": "string"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "category": {
+      "type": "string"
+    },
+    "headline": {
+      "type": "string"
+    },
+    "used_text": {
+      "type": "string"
+    },
+    "art_url": {
+      "type": "string"
+    },
+    "platforms": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "story_id",
+    "published_at",
+    "headline"
+  ]
+}

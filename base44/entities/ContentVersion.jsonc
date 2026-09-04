@@ -1,0 +1,47 @@
+{
+  "name": "ContentVersion",
+  "type": "object",
+  "properties": {
+    "story_id": {
+      "type": "string"
+    },
+    "version_number": {
+      "type": "number"
+    },
+    "art_headline": {
+      "type": "string"
+    },
+    "alternative_headlines": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "factual_summary": {
+      "type": "string"
+    },
+    "facebook_text": {
+      "type": "string"
+    },
+    "instagram_text": {
+      "type": "string"
+    },
+    "source_notes": {
+      "type": "string"
+    },
+    "fact_check_notes": {
+      "type": "string"
+    },
+    "art_instructions": {
+      "type": "string"
+    },
+    "is_final": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "story_id",
+    "version_number"
+  ]
+}

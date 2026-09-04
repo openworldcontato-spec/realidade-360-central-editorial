@@ -1,0 +1,37 @@
+{
+  "name": "Artwork",
+  "type": "object",
+  "properties": {
+    "story_id": {
+      "type": "string"
+    },
+    "content_version_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "instructions": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Rascunho",
+        "Aprovada",
+        "Publicada"
+      ],
+      "default": "Rascunho"
+    }
+  },
+  "required": [
+    "story_id",
+    "title"
+  ]
+}

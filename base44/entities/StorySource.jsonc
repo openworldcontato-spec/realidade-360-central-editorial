@@ -1,0 +1,29 @@
+{
+  "name": "StorySource",
+  "type": "object",
+  "properties": {
+    "story_id": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string"
+    },
+    "source_title": {
+      "type": "string"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "story_id",
+    "source_id"
+  ]
+}
