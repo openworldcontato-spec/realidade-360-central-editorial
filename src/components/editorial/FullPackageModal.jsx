@@ -53,10 +53,12 @@ export default function FullPackageModal({ story, onClose, onComplete }) {
       const heads = [v?.art_headline, ...(v?.alternative_headlines || [])].filter(Boolean);
       const wc = h => (h.split(/\s+/).filter(Boolean).length);
       const finalHeadline = heads.find(h => wc(h) >= 6 && wc(h) <= 16) || v?.art_headline || story.title;
+      const artSources = await base44.entities.StorySource.filter({ story_id: story.id }, '-published_at', 20).catch(() => []);
       const r3 = await base44.functions.invoke('generateArtImage', {
         editoria: story.category,
         headline: finalHeadline,
-        context: v?.factual_summary || story.what_happened || story.summary || ''
+        context: v?.factual_summary || story.what_happened || story.summary || '',
+        source_titles: (artSources || []).map(s => `${s.source_name || ''}: ${s.source_title || ''}`).filter(Boolean)
       });
       if (r3.data?.error) throw Object.assign(new Error(r3.data.error), { step: 'arte' });
       acc.imageUrl = r3.data.url;
@@ -72,7 +74,7 @@ export default function FullPackageModal({ story, onClose, onComplete }) {
         title: finalHeadline, headline: finalHeadline,
         editoria: story.category, category: story.category,
         template: 'destaque', format: 'feed',
-        image_url: acc.imageUrl, image_origin: 'ai', is_illustrative: true,
+        image_url: acc.imageUrl, image_origin: r3.data?.image_origin || 'ai_editorial', is_illustrative: true,
         status: 'Rascunho', version: versionNum, parent_id: parentId || undefined
       });
       if (!parentId) { await base44.entities.Artwork.update(artwork.id, { parent_id: artwork.id }); artwork.parent_id = artwork.id; }

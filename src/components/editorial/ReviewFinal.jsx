@@ -72,6 +72,20 @@ export default function ReviewFinal({ storyId, versionId, artworkId, partial, on
 
   const openStudio = () => artwork ? navigate(`/estudio?art=${artwork.id}`) : navigate(`/estudio?story=${story.id}&headline=${encodeURIComponent(headline)}&cv=${version.id}`);
 
+  // Fallback editorial: em algumas execuções a ContentVersion já possui a lista de
+  // fontes no sources_text/checagem antes de StorySource estar disponível na UI.
+  // Nesse caso, não mostre "Fontes (0)" enquanto há fontes claramente citadas.
+  const fallbackSourceNames = (() => {
+    const names = new Set();
+    const raw = String(version?.sources_text || '').replace(/^Fontes?:\s*/i, '').replace(/[.]$/, '');
+    raw.split(/,|;|\se\s/).map(x => x.trim()).filter(Boolean).forEach(x => names.add(x));
+    (version?.checagem || []).forEach(item => {
+      String(item?.source || '').split(/,|;/).map(x => x.trim()).filter(Boolean).forEach(x => names.add(x));
+    });
+    return [...names];
+  })();
+  const displayedSourceCount = sources.length || fallbackSourceNames.length;
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 p-3 sm:p-6">
       <div className="mx-auto max-w-5xl rounded-2xl border border-white/10 bg-[#0b1424] shadow-2xl">
@@ -121,8 +135,12 @@ export default function ReviewFinal({ storyId, versionId, artworkId, partial, on
             </div>
 
             <div className="rounded-xl border border-white/7 bg-[#070d18] p-4">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">Fontes ({sources.length})</span>
-              <ul className="mt-2 space-y-1.5">{sources.map((s, i) => <li key={i} className="text-xs text-slate-300"><a href={s.source_url} target="_blank" rel="noreferrer" className="hover:text-blue-300">{s.is_primary && <span className="text-[#d4af55]">● </span>}{s.source_name || 'Veículo'} — {s.source_title || s.source_url}</a></li>)}</ul>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">Fontes ({displayedSourceCount})</span>
+              {sources.length > 0 ? (
+                <ul className="mt-2 space-y-1.5">{sources.map((s, i) => <li key={i} className="text-xs text-slate-300"><a href={s.source_url} target="_blank" rel="noreferrer" className="hover:text-blue-300">{s.is_primary && <span className="text-[#d4af55]">● </span>}{s.source_name || 'Veículo'} — {s.source_title || s.source_url}</a></li>)}</ul>
+              ) : (
+                <ul className="mt-2 space-y-1.5">{fallbackSourceNames.map((name, i) => <li key={i} className="text-xs text-slate-300">{name}</li>)}</ul>
+              )}
             </div>
 
             <div><h3 className="mb-2 text-[10px] font-bold uppercase tracking-wider text-blue-400">Checagem 360</h3><Checagem360 items={version.checagem || []} /></div>
