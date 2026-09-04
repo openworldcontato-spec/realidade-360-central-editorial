@@ -1,9 +1,0 @@
-{
-  "name": "Realidade 360 \u2014 Central Editorial",
-  "site": {
-    "installCommand": "npm install",
-    "buildCommand": "npm run build",
-    "serveCommand": "npm run dev",
-    "outputDirectory": "./dist"
-  }
-}
